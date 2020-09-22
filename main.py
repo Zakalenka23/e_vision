@@ -15,7 +15,7 @@ polygons = [[(0, 719), (1280,719),(970,550), (420,550)]] #(640,360)]
 houhgVoteTrashold = 75
 
 
-
+path = "C:/car vision proj/media/DR101423.AVI"
 #Определение линий
 def canny(image, trashhold):
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
@@ -112,7 +112,7 @@ def AVGlinesInTime(avgLines):
 
 
 def main():
-    cap = cv2.VideoCapture("DR101423.AVI")
+    cap = cv2.VideoCapture(path)
 
     while(cap.isOpened()):
         _, image = cap.read()
