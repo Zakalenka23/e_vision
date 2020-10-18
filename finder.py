@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 #"C:/car vision proj/media/scr.jpg"
 path = "C:/car vision proj/media/DR101423.AVI"
-
+#path = "D:/ets2.mp4"
 class visor():
     def __init__(self, colorimage):
         if type(colorimage) == type("sample"):
@@ -16,8 +16,9 @@ class visor():
         self.lineColor = (255,0,0)
         self.line_thickness = 2 
         self.canny_treshold = (50, 150)
-        self.polygons = [[(0, 719), (1280,719),(970,550), (420,550)]]
-        #self.polygons = polygons = [[(0, 719), (1280,719),(870,550), (520,550)]]
+        #self.polygons = [[(0, 719), (1280,719),(970,550), (420,550)]]
+        self.polygons = [[(200,720),(1100,720),(800,540),(580,540)]]#ETS STANDART BUMPER
+        #self.polygons = polygons = [[(0, 719), (1280,719),(1280,0), (0,0)]] #full
         
         #image parameters
         self.imageHeight = self.image.shape[0] #720 
@@ -33,6 +34,7 @@ class visor():
         self.cropped_image = None
         self.line_image = None
 
+
         # Hough parameters
         self.RHO = 1 
         self.theta = np.pi/360
@@ -44,6 +46,12 @@ class visor():
         self.slopeTreshold = 0.5
 
 
+        self.parCounter = 0
+
+        self.foo = 0
+        self.verticalLine = np.array([640, self.imageHeight, 640, 0])
+        self.DoDisplayVerticalLine = False
+    
     def canny(self):
         blur = cv2.GaussianBlur(self.image ,(7,7),0)
         self.canny_image = cv2.Canny(blur, self.canny_treshold[0], self.canny_treshold[1])
@@ -81,35 +89,63 @@ class visor():
                 elif slope > self.slopeTreshold:
                     rightFit.append((slope, intercept))
                     #rightSlope.append(slope)
-            leftFitAVG = np.average(leftFit, axis=0)
-            rightFitAVG = np.average(rightFit, axis=0)
+            self.leftFitAVG = np.average(leftFit, axis=0)
+            self.rightFitAVG = np.average(rightFit, axis=0)
 
             try:
-                self.leftLine = self.makeCoordinates(leftFitAVG)
+                self.leftLine = self.makeCoordinates(self.leftFitAVG)               
             except Exception as e:
-                print(e, '\n')
-                self.leftLine = np.array([0,0,0,0])             
-            
+                # print(e, '\n')
+                # self.leftLine = np.array([0,0,0,0])             
+                pass
             try:
-                self.rightLine = self.makeCoordinates(rightFitAVG)
+                self.rightLine = self.makeCoordinates(self.rightFitAVG)
             except Exception as e:
-                print(e, '\n')
-                self.rightLine = np.array([0,0,0,0])
-            
-            self.averegedLines = np.array([self.leftLine,self.rightLine])
+                pass
+                #print(e, '\n')
+                #self.rightLine = np.array([0,0,0,0])
+
+
+
+            #debug
+            if self.DoDisplayVerticalLine == True:
+                self.averegedLines = np.array([self.leftLine,self.rightLine, self.verticalLine])
+            else:
+                self.averegedLines = np.array([self.leftLine,self.rightLine])#, self.verticalLine])
+
 
 
     def displayLines(self): #image, lines, line_thickness, lineColor):
         self.line_image = np.copy(self.colorimage)
         if self.averegedLines is not None:
-            for line in self.lines: #self.averegedLines:
+            for line in self.averegedLines: #self.averegedLines:
                 x1, y1, x2,y2 = line.reshape(4)
                 try:
                     cv2.line(self.line_image, (x1,y1), (x2,y2), self.lineColor, self.line_thickness)
                 except Exception as e:
-                    print(e, "\n")
+                    pass
+                    #print(e, "\n")
 
+    def debugLine(self): #image, lines, line_thickness, lineColor):
+        self.line_image = np.copy(self.colorimage)
+        if self.verticalLine is not None:
+            x1, y1, x2,y2 = self.verticalLine.reshape(4)
+            try:
+                cv2.line(self.line_image, (x1,y1), (x2,y2), self.lineColor, self.line_thickness)
+            except Exception as e:
+                pass
+                #print(e, "\n")
 
+    # def updateParameters(self):
+    #     if self.parCounter < 10:
+    #         self.parametersLeft[self.parCounter] = self.leftFitAVG
+    #         self.parametersRight[self.parCounter] = self.rightFitAVG
+    #         self.parCounter += 1
+    #     else:
+    #         self.parCounter = 0
+    #         self.parametersLeft[self.parCounter] = self.leftFitAVG
+    #         self.parametersRight[self.parCounter] = self.rightFitAVG
+    #         self.parCounter += 1
 
     def updateImage(self, colorimage):
         self.colorimage = colorimage
@@ -123,6 +159,11 @@ class visor():
             cap.release()
             cv2.destroyAllWindows()
 
+
+    def DifferenseBetweenLines(self):
+        if self.averegedLines[1][0] !=0 and self.averegedLines[0][0] !=0:
+            print((self.averegedLines[1][0]+self.averegedLines[0][0]), '\n')
+
             
 
     def Do(self):
@@ -132,7 +173,17 @@ class visor():
         self.displayLines()
         self.averageLines()
 
-
+        #self.updateParameters()
+        #self.DifferenseBetweenLines()
+        
+#and self.foo == 0:    # slope, intercept
+        try:
+            bar = abs(self.parametersLeft[self.parCounter-1][0])/abs(self.parametersRight[self.parCounter-1][0]) 
+        except Exception as e:
+            #print(e)
+            bar = 0
+        #print(bar)
+            #self.foo+=1
 
 
 

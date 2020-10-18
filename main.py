@@ -10,9 +10,9 @@ lineColor = (255,0,0)
 #constants
 line_thickness = 2 
 canny_trashold = (50, 150)
-polygons = [[(0, 719), (1280,719),(970,550), (420,550)]] #(640,360)]
-#polygons = polygons = [[(0, 719), (1280,719),(870,550), (520,550)]]
-houhgVoteTrashold = 75
+#polygons = [[(0, 719), (1280,719),(970,550), (420,550)]] #(640,360)]
+polygons = polygons = [[(0, 719), (1280,719),(870,550), (520,550)]]
+houhgVoteTrashold = 50
 
 
 path = "C:/car vision proj/media/DR101423.AVI"
@@ -64,10 +64,10 @@ def average_slope_intercept(image, lines):
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line.reshape(4)
-            parameters = np.polyfit((x1,x2), (y1,y2), 1)
-            print (parameters, '\n')
-            slope = parameters[0]
-            intercept = parameters[1]
+            slope, intercept = np.polyfit((x1,x2), (y1,y2), 1)
+            # print (parameters, '\n')
+            # slope = parameters[0]
+            # intercept = parameters[1]
             if slope < -0.5:
                 left_fit.append((slope, intercept))
                 leftSlope.append(slope)
@@ -117,18 +117,15 @@ def main():
     while(cap.isOpened()):
         _, image = cap.read()
         #загружаем картинку из файла
-        #aimage = cv2.imread("vert.jpg")
         #image = cv2.imread("test.jpg")
         #Ищем линии и делаем из них точки
         canny_image = canny(image, canny_trashold)
         #Обрезаем картинку до нужной нам области
         cropped_image = ROI(canny_image, polygons)
-        cv2.imshow("new",cropped_image)
-        #Проходимся по массиву точек и делаем из него линии
-        lines = cv2.HoughLinesP(cropped_image,5,np.pi/360, houhgVoteTrashold, minLineLength=5, maxLineGap=30)
-        #print("HOUGHLINES",cv2.HoughLines(cropped_image,0.1,np.pi/180,houhgVoteTrashold), "\n\n\n")
         
-        #print(lines) 
+        #Проходимся по массиву точек и делаем из него линии
+        lines = cv2.HoughLinesP(cropped_image,1,np.pi/360, houhgVoteTrashold, minLineLength=20, maxLineGap=30)
+        
         #DEBUG
         imageWithRawLines = display_lines(image, lines, line_thickness, lineColor)
 
@@ -140,7 +137,7 @@ def main():
         #накладываем линии на наше изображение, если они есть
         image_with_lines = display_lines(image, avereged_lines, line_thickness, lineColor)
         cv2.imshow("res",imageWithRawLines)
-        # cv2.imshow("new",canny_image)
+        #cv2.imshow("new",cropped_image)
         cv2.imshow("new",image_with_lines)
         
         if cv2.waitKey(0) == ord('q'):
