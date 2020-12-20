@@ -3,9 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import imageGrabber as grab
 import time
+import math
 #"C:/car vision proj/media/scr.jpg"
-path = "C:/car vision proj/media/DR101423.AVI"
-#path = "D:/ets2.mp4"
+#path = "C:/car vision proj/media/DR101423.AVI"
+#path = "D:/video/2020-12-12 23-32-11.mp4"
+path = "C:/car vision proj/media/withoutsound.mp4"
+
 class visor():
     def __init__(self, colorimage):
         if type(colorimage) == type("sample"):
@@ -58,7 +61,7 @@ class visor():
 
         self.foo = 0
         self.verticalLine = np.array([640, self.imageHeight, 640, 0])
-        self.DoDisplayVerticalLine = False
+        self.DoDisplayVerticalLine = True
     
         self.leftLineOLD = None
         self.rightLineOLD = None
@@ -72,7 +75,7 @@ class visor():
     def cropImage(self):
         polygon = np.array(self.polygons)
         mask = np.zeros_like(self.image)
-        cv2.fillPoly(mask, polygon, 100)
+        cv2.fillPoly(mask, polygon, 255)
         self.cropped_image = cv2.bitwise_and(self.canny_image, mask)
 
 
@@ -168,7 +171,7 @@ class visor():
         self.imageHeight = self.image.shape[0] #720 
         self.imageWidth = self.image.shape[1] #1280 
 
-    def show(self, delay):
+    def show(self):
         cv2.cv2.imshow("res", self.line_image) #self.line_image)
 
 
@@ -201,9 +204,25 @@ class visor():
         self.canny()
         self.cropImage()
         self.makeLines()
+        self.debugLine()
         self.newDisplayer()
         self.averageLines()
         self.lineCorrection()
+        
+        #self.debug()
+
+
+    def debug(self):
+        try:
+            foo = self.leftFitAVG - self.rightFitAVG
+            cv2.line(self.line_image, (640,720), (640-10*foo,0),(255,0,0),self.line_thickness ) #(lx1,ly1), (lx2,ly2), self.lineColor[lcolor], self.line_thickness)
+        except Exception as e:
+            print(e)
+
+        
+
+
+
 
 #and self.foo == 0:    # slope, intercept
         # try:
@@ -217,26 +236,36 @@ class visor():
 
 
 
-
-# cap = cv2.VideoCapture(path)
-# _, startImage = cap.read()
-# visor = visor(colorimage = startImage)
-# #grab.grab()
-# while (cap.isOpened()):
-#     _, image = cap.read()
-#     visor.updateImage(image)
-#     visor.Do()
-#     visor.show(delay = 1, cap = cap)
-#     time.sleep(1/45)
-
-startImage = grab.grab()
+#video 
+cap = cv2.VideoCapture(path)
+_, startImage = cap.read()
 visor = visor(colorimage = startImage)
-
-while True:
-    image = grab.grab()
+grab.grab()
+while (cap.isOpened()):
+    _, image = cap.read()
     visor.updateImage(image)
     visor.Do()
-    visor.show(delay = 1)
-    if cv2.waitKey(1) == ord('q'):
-        break
+    visor.show()
 
+    if cv2.waitKey(16) == ord('q'):
+         break
+
+
+
+
+#############################################screen capture
+# startImage = grab.grab()
+# visor = visor(colorimage = startImage)
+
+# while True:
+#     image = grab.grab()
+#     visor.updateImage(image)
+#     visor.Do()
+#     visor.show()
+#     if cv2.waitKey(1) == ord('q'):
+#         break
+
+
+
+
+#static picture
