@@ -1,14 +1,15 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import imageGrabber as grab
+import grabber as grab
 import time
 import math
+import joystick
 #"C:/car vision proj/media/scr.jpg"
 #path = "C:/car vision proj/media/DR101423.AVI"
-#path = "D:/video/2020-12-12 23-32-11.mp4"
-path = "C:/car vision proj/media/withoutsound.mp4"
-
+path = "D:/Denis/Downloads/2020-12-12 23-32-11.mp4"
+#path = "C:/car vision proj/media/withoutsound.mp4"
+path = "D:/Denis/Downloads/withoutsound.mp4"
 class visor():
     def __init__(self, colorimage):
         if type(colorimage) == type("sample"):
@@ -26,11 +27,9 @@ class visor():
         self.lineColor = ((0,255,0),(0,0,255),(78,237,232)) # blue green red
         self.line_thickness = 2 
         self.canny_treshold = (50, 150)
-        #self.polygons = [[(0, 719), (1280,719),(970,550), (420,550)]]
-        #self.polygons = [[(200,720),(1100,720),(800,540),(580,540)]]#ETS STANDART BUMPER
-        #self.polygons = polygons = [[(0, 719), (1280,719),(1280,0), (0,0)]] #full
-        self.polygons = [[(0, 719), (1280,719),(640,360)]] #triangle
-        #self.polygonsTEST = [[(0, 719), (1280,719),(640,360)]]
+        self.polygons = [[(80, 719), (1200,719),(727+40,320), (610-40,320)]] #MAUN ###############################
+        #self.polygons = [[(0, 719), (1280,719),(640,360)]] #triangle
+        #self.polygons = [[(0, 719), (1280,719),(640,360)]]
         #image parameters
         self.imageHeight = self.image.shape[0] #720 
         self.imageWidth = self.image.shape[1] #1280 
@@ -51,7 +50,7 @@ class visor():
         self.theta = np.pi/360
         self.houhgVoteTreshold = 50
         self.minLineLength = 20
-        self.maxLineGap = 30
+        self.maxLineGap = 20
 
 
         self.slopeTreshold = 0.5
@@ -68,7 +67,9 @@ class visor():
 
 
     def canny(self):
-        blur = cv2.GaussianBlur(self.image ,(7,7),0)
+        kernel = np.ones((7,7),np.float32)/40
+        blur = cv2.filter2D(self.image,-1,kernel)
+        #blur = cv2.GaussianBlur(self.image ,(7,7),0)
         self.canny_image = cv2.Canny(blur, self.canny_treshold[0], self.canny_treshold[1])
 
 
@@ -132,47 +133,30 @@ class visor():
 
     def newDisplayer(self): #lines = self. ...
         self.line_image = np.copy(self.colorimage)
-        if self.leftLine is not None and self.rightLine is not None:
+        if self.leftLine is not None:
             lx1, ly1, lx2, ly2, lcolor = self.leftLine.reshape(5)
-            rx1, ry1, rx2, ry2, rcolor = self.rightLine.reshape(5)
             cv2.line(self.line_image, (lx1,ly1), (lx2,ly2), self.lineColor[lcolor], self.line_thickness)
-            cv2.line(self.line_image, (rx1,ry1), (rx2,ry2), self.lineColor[rcolor], self.line_thickness)
             self.leftLine = np.array([lx1, ly1, lx2, ly2, 1])
             self.leftLineOLD = np.copy(self.leftLine)
+        if self.rightLine is not None:
+            rx1, ry1, rx2, ry2, rcolor = self.rightLine.reshape(5)
+            cv2.line(self.line_image, (rx1,ry1), (rx2,ry2), self.lineColor[rcolor], self.line_thickness)
             self.rightLine = np.array([rx1, ry1, rx2, ry2, 1])
             self.rightLineOLD = np.copy(self.rightLine)
 
 
-    def displayLines(self): #image, lines, line_thickness, lineColor):
-        self.line_image = np.copy(self.colorimage)
-        if self.averegedLines is not None:
-            for line in self.averegedLines: #self.averegedLines:
-                x1, y1, x2,y2 = line.reshape(4)
-                try:
-                    cv2.line(self.line_image, (x1,y1), (x2,y2), self.lineColor, self.line_thickness)
-                except Exception as e:
-                    pass
-                    #print(e, "\n")
-
-    def debugLine(self): #image, lines, line_thickness, lineColor):
-        self.line_image = np.copy(self.colorimage)
-        if self.verticalLine is not None:
-            x1, y1, x2,y2 = self.verticalLine.reshape(4)
-            try:
-                cv2.line(self.line_image, (x1,y1), (x2,y2), self.lineColor, self.line_thickness)
-            except Exception as e:
-                pass
-                #print(e, "\n")
+    
 
     def updateImage(self, colorimage):
         self.colorimage = colorimage
         self.image = cv2.cvtColor(self.colorimage, cv2.COLOR_BGR2GRAY)
-        self.image = self.image - 40
+        self.image = self.image + 40
         self.imageHeight = self.image.shape[0] #720 
         self.imageWidth = self.image.shape[1] #1280 
 
     def show(self):
-        cv2.cv2.imshow("res", self.line_image) #self.line_image)
+        cv2.cv2.imshow("lines", self.line_image) #self.line_image)
+        cv2.imshow("cropImage", self.cropped_image)
 
 
     def lineCorrection(self):
@@ -197,75 +181,62 @@ class visor():
                     a = [self.leftLine[0]+dx1, self.leftLine[1]+dy1, self.leftLine[2]+dx2, self.leftLine[3]+dy2, 2]
                     self.leftLine = np.array(a)
             except Exception as e:
-                print(e)
-            
+                #print(e)
+                pass
 
     def Do(self):
         self.canny()
         self.cropImage()
         self.makeLines()
-        self.debug()
         self.newDisplayer()
         self.averageLines()
         self.lineCorrection()
-        
-        #self.debug()
+
 
 
     def debug(self):
         try:
-            foo = self.leftFitAVG - self.rightFitAVG
-            cv2.line(self.line_image, (640,720), ((640-10*foo),0),(255,0,0),self.line_thickness ) #(lx1,ly1), (lx2,ly2), self.lineColor[lcolor], self.line_thickness)
+            #эта хуйня кароче вычисляет постоянный наклон (поворот дороги )
+            leftVector = np.array([self.leftLine[0] - self.leftLine[2], self.leftLine[1] - self.leftLine[3]])
+            rightVector = np.array([self.rightLine[0] - self.rightLine[2], self.rightLine[1] - self.rightLine[3]])
+            #print(leftVector, rightVector)
+            #print(leftVector + rightVector, "\n")
+            diff = (1280/2) -  np.average([self.leftLine[0],   self.rightLine[0]])
+            force = diff #((diff/10))**2
+            # if diff<0:
+            #     force = -force 
+            return force*1.5
         except Exception as e:
-            print(e)
-
-        
+            return 0
 
 
 
-
-#and self.foo == 0:    # slope, intercept
-        # try:
-        #     bar = abs(self.parametersLeft[self.parCounter-1][0])/abs(self.parametersRight[self.parCounter-1][0]) 
-        # except Exception as e:
-        #     #print(e)
-        #     bar = 0
-
-
-
-
-
-
-#video 
-cap = cv2.VideoCapture(path)
-_, startImage = cap.read()
-visor = visor(colorimage = startImage)
-grab.grab()
-while (cap.isOpened()):
-    _, image = cap.read()
-    visor.updateImage(image)
-    visor.Do()
-    visor.show()
-
-    if cv2.waitKey(16) == ord('q'):
-         break
-
-
-
-
-#############################################screen capture
-# startImage = grab.grab()
+foo = True
+# #video 
+# cap = cv2.VideoCapture(path)
+# _, startImage = cap.read()
 # visor = visor(colorimage = startImage)
-
-# while True:
-#     image = grab.grab()
+# while (cap.isOpened()) and foo:
+#     _, image = cap.read()
 #     visor.updateImage(image)
 #     visor.Do()
 #     visor.show()
-#     if cv2.waitKey(1) == ord('q'):
-#         break
+#     force = visor.debug()
+#     joystick.setMouseByForce(force)
+#     if cv2.waitKey(16) == ord(' '):
+#          break
 
+#############################################screen capture
+startImage = grab.grab()
+visor = visor(colorimage = startImage)
 
+while True:
+    image = grab.grab()
+    visor.updateImage(image)
+    visor.Do()
+    visor.show()
+    force = visor.debug()
+    joystick.setMouseByForce(force)
+    if cv2.waitKey(33) == ord(' '):
+        break
 
-
-#static picture
