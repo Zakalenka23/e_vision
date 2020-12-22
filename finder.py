@@ -204,7 +204,7 @@ class visor():
         self.canny()
         self.cropImage()
         self.makeLines()
-        self.debugLine()
+        self.debug()
         self.newDisplayer()
         self.averageLines()
         self.lineCorrection()
@@ -215,7 +215,7 @@ class visor():
     def debug(self):
         try:
             foo = self.leftFitAVG - self.rightFitAVG
-            cv2.line(self.line_image, (640,720), (640-10*foo,0),(255,0,0),self.line_thickness ) #(lx1,ly1), (lx2,ly2), self.lineColor[lcolor], self.line_thickness)
+            cv2.line(self.line_image, (640,720), ((640-10*foo),0),(255,0,0),self.line_thickness ) #(lx1,ly1), (lx2,ly2), self.lineColor[lcolor], self.line_thickness)
         except Exception as e:
             print(e)
 
