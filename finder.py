@@ -7,9 +7,10 @@ import math
 import joystick
 #"C:/car vision proj/media/scr.jpg"
 #path = "C:/car vision proj/media/DR101423.AVI"
-path = "D:/Denis/Downloads/2020-12-12 23-32-11.mp4"
+#path = "D:/Denis/Downloads/2020-12-12 23-32-11.mp4"
 #path = "C:/car vision proj/media/withoutsound.mp4"
-path = "D:/Denis/Downloads/withoutsound.mp4"
+#path = "D:/Denis/Downloads/withoutsound.mp4"
+path = "D:/video/2020-12-12 23-32-11.mp4"
 class visor():
     def __init__(self, colorimage):
         if type(colorimage) == type("sample"):
@@ -21,12 +22,12 @@ class visor():
         
 
         self.image = cv2.cvtColor(self.colorimage, cv2.COLOR_BGR2GRAY)
-        self.image = np.multiply(self.image, 10)
+        #self.image = np.multiply(self.image, 10)
 
 
         self.lineColor = ((0,255,0),(0,0,255),(78,237,232)) # blue green red
         self.line_thickness = 2 
-        self.canny_treshold = (50, 150)
+        self.canny_treshold = (50, 250)
         self.polygons = [[(80, 719), (1200,719),(727+40,320), (610-40,320)]] #MAUN ###############################
         #self.polygons = [[(0, 719), (1280,719),(640,360)]] #triangle
         #self.polygons = [[(0, 719), (1280,719),(640,360)]]
@@ -53,7 +54,7 @@ class visor():
         self.maxLineGap = 20
 
 
-        self.slopeTreshold = 0.5
+        self.slopeTreshold = 1 #0.5
 
 
         self.parCounter = 0
@@ -99,10 +100,10 @@ class visor():
             for line in self.lines:
                 x1, y1, x2, y2 = line.reshape(4)
                 slope, intercept = np.polyfit((x1,x2), (y1,y2), 1)
-                if slope < -self.slopeTreshold:
+                if slope < -self.slopeTreshold: #исх <
                     leftFit.append((slope, intercept))
                     #leftSlope.append(slope)
-                elif slope > self.slopeTreshold:
+                elif slope > self.slopeTreshold: #>
                     rightFit.append((slope, intercept))
                     #rightSlope.append(slope)
             self.leftFitAVG = np.average(leftFit, axis=0)
@@ -150,13 +151,17 @@ class visor():
     def updateImage(self, colorimage):
         self.colorimage = colorimage
         self.image = cv2.cvtColor(self.colorimage, cv2.COLOR_BGR2GRAY)
-        self.image = self.image + 40
+        
+        self.image = self.image + 45
+        #self.image *= 2
         self.imageHeight = self.image.shape[0] #720 
         self.imageWidth = self.image.shape[1] #1280 
 
     def show(self):
         cv2.cv2.imshow("lines", self.line_image) #self.line_image)
         cv2.imshow("cropImage", self.cropped_image)
+        #cv2.imshow("cropImage", self.canny_image)
+
 
 
     def lineCorrection(self):
@@ -213,30 +218,30 @@ class visor():
 
 foo = True
 # #video 
-# cap = cv2.VideoCapture(path)
-# _, startImage = cap.read()
+cap = cv2.VideoCapture(path)
+_, startImage = cap.read()
+visor = visor(colorimage = startImage)
+while (cap.isOpened()) and foo:
+    _, image = cap.read()
+    visor.updateImage(image)
+    visor.Do()
+    visor.show()
+    #force = visor.debug()
+    #joystick.setMouseByForce(force)
+    if cv2.waitKey(16) == ord(' '):
+         break
+
+#############################################screen capture
+# startImage = grab.grab()
 # visor = visor(colorimage = startImage)
-# while (cap.isOpened()) and foo:
-#     _, image = cap.read()
+
+# while True:
+#     image = grab.grab()
 #     visor.updateImage(image)
 #     visor.Do()
 #     visor.show()
 #     force = visor.debug()
 #     joystick.setMouseByForce(force)
-#     if cv2.waitKey(16) == ord(' '):
-#          break
-
-#############################################screen capture
-startImage = grab.grab()
-visor = visor(colorimage = startImage)
-
-while True:
-    image = grab.grab()
-    visor.updateImage(image)
-    visor.Do()
-    visor.show()
-    force = visor.debug()
-    joystick.setMouseByForce(force)
-    if cv2.waitKey(33) == ord(' '):
-        break
+#     if cv2.waitKey(33) == ord(' '):
+#         break
 
